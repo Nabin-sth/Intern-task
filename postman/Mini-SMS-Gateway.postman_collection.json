@@ -1,0 +1,171 @@
+{
+  "info": {
+    "name": "Mini SMS Gateway (Part A)",
+    "description": "Nest SMS intern API: auth, send, logs, and route health. Set baseUrl and register once, then copy data.token into jwt.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "jwt", "value": "" },
+    { "key": "email", "value": "demo@example.com" },
+    { "key": "password", "value": "secret123" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Process health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/health"
+          }
+        },
+        {
+          "name": "Route health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/routes/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('jwt', body.data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/register"
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('jwt', body.data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Current user",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": "{{baseUrl}}/auth/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "SMS",
+      "item": [
+        {
+          "name": "Send (success path)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": [\"9841234567\", \"+9779801122334\"],\n  \"message\": \"hello\"\n}"
+            },
+            "url": "{{baseUrl}}/sms/send"
+          }
+        },
+        {
+          "name": "Send (invalid number)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": [\"9612345678\"],\n  \"message\": \"hello\"\n}"
+            },
+            "url": "{{baseUrl}}/sms/send"
+          }
+        },
+        {
+          "name": "Send (Unicode / Nepali)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": [\"9841234567\"],\n  \"message\": \"नमस्ते संसार यो युनिकोड सन्देश हो\"\n}"
+            },
+            "url": "{{baseUrl}}/sms/send"
+          }
+        },
+        {
+          "name": "Logs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/sms/logs?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["sms", "logs"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "status", "value": "sent", "disabled": true },
+                { "key": "phone", "value": "+9779841234567", "disabled": true },
+                { "key": "from", "value": "2026-01-01T00:00:00.000Z", "disabled": true },
+                { "key": "to", "value": "2026-12-31T23:59:59.000Z", "disabled": true }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
