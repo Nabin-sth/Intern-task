@@ -18,7 +18,8 @@ export const requireAuth = asyncHandler(async (req, _res, next) => {
   let payload;
   try {
     payload = jwt.verify(token, env.jwtSecret);
-  } catch {
+  } catch (error) {
+    console.log("error:", error);
     throw new AppError('Invalid or expired token', 401);
   }
 

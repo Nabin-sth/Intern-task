@@ -92,7 +92,7 @@ curl -s "http://localhost:3000/sms/logs?status=sent&page=1&limit=20&phone=%2B977
   -H "Authorization: Bearer <jwt>"
 ```
 
-Query: `page` (default 1), `limit` (default 20, max 100), `status` (`pending`\|`sent`\|`failed`), `from` / `to` (ISO, inclusive `createdAt`), `phone` (normalised). Newest first. Only the caller’s messages.
+Query: `page` (default 1), `limit` (default 20, max 100), `status` (`pendingsentfailed`), `from` / `to` (ISO, inclusive `createdAt`), `phone` (normalised). Newest first. Only the caller’s messages.
 
 ### Route health sample
 
@@ -181,7 +181,7 @@ On startup, `reconcileStaleReservations` refunds `pending`+`charged` rows older 
 Counts come from persisted `message.providerAttempts` in the last **24 hours**.
 
 - A **send attempt** excludes `error=insufficient_balance` (skip, not a failed send).
-- `successRate = successes / sendAttempts`. If `sendAttempts` is 0, `successRate` is **`null`** (not `0%`). `sample` is `no_send_attempts`.
+- `successRate = successes / sendAttempts`. If `sendAttempts` is 0, `successRate` is `null` (not `0%`). `sample` is `no_send_attempts`.
 
 ```
 balanceFactor = min(1, providerBalance / HEALTHY_PROVIDER_BALANCE)
@@ -220,28 +220,6 @@ Default `HEALTHY_PROVIDER_BALANCE` is `10000`. Zero attempts never look like a 1
 | `wallets` | One per user; integer `credits` |
 | `providers` | Mock routes; persistent `balance` |
 | `messages` | Per-recipient log + `providerAttempts` |
-
-## What `npm test` covers
-
-This suite was run as part of the Part A audit (`npm run check` then `npm test`): **55 tests, 0 failures**.
-
-| Scenario | Where it is asserted |
-| -------- | -------------------- |
-| Successful send | `tests/sms.send.test.js` |
-| Failover A → B | `tests/sms.send.test.js` |
-| All providers fail + refund | `tests/sms.send.test.js` |
-| Invalid phone | `tests/phone.test.js`, `tests/sms.send.test.js` |
-| Insufficient credits | `tests/wallet.test.js`, `tests/sms.send.test.js` |
-| Segmentation + cost (PDF 200 EN / 100 Nepali, boundaries, extensions) | `tests/smsSegment.test.js` |
-| Logs pagination + status/date/phone filters | `tests/sms.logs.test.js` |
-| Provider health + empty-route `successRate: null` | `tests/routeHealth.test.js`, `tests/sms.logs.test.js` |
-| 20 parallel cost-1 reserves vs 10 credits → exactly 10 succeed | `tests/wallet.test.js` |
-
-Live `POST /sms/send` still uses random mock failure rates, so a manual curl may fail over or refund even when tests force success.
-
-## Postman
-
-Import `postman/Mini-SMS-Gateway.postman_collection.json`. Collection variables: `baseUrl`, `email`, `password`, `jwt`. Register or Login writes `jwt` automatically.
 
 ## Known limitations
 

@@ -12,8 +12,6 @@ export const login = asyncHandler(async (req, res) => {
 });
 
 export const me = asyncHandler(async (req, res) => {
-  console.log("req.user.id:", req.user.id);
   const data = await authService.getCurrentUser(req.user.id);
-  console.log("data:", data);
   res.status(200).json({ success: true, data });
 });
