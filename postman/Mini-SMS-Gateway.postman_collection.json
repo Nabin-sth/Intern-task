@@ -146,7 +146,22 @@
           }
         },
         {
-          "name": "Logs",
+          "name": "Send (200-char English, 2 parts)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": [\"9841234567\"],\n  \"message\": \"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\"\n}"
+            },
+            "url": "{{baseUrl}}/sms/send"
+          }
+        },
+        {
+          "name": "Logs (paginated)",
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
@@ -156,11 +171,27 @@
               "path": ["sms", "logs"],
               "query": [
                 { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Logs (status, phone, date)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/sms/logs?page=1&limit=20&status=sent&phone=%2B9779841234567&from=2026-01-01T00:00:00.000Z&to=2026-12-31T23:59:59.000Z",
+              "host": ["{{baseUrl}}"],
+              "path": ["sms", "logs"],
+              "query": [
+                { "key": "page", "value": "1" },
                 { "key": "limit", "value": "20" },
-                { "key": "status", "value": "sent", "disabled": true },
-                { "key": "phone", "value": "+9779841234567", "disabled": true },
-                { "key": "from", "value": "2026-01-01T00:00:00.000Z", "disabled": true },
-                { "key": "to", "value": "2026-12-31T23:59:59.000Z", "disabled": true }
+                { "key": "status", "value": "sent" },
+                { "key": "phone", "value": "+9779841234567" },
+                { "key": "from", "value": "2026-01-01T00:00:00.000Z" },
+                { "key": "to", "value": "2026-12-31T23:59:59.000Z" }
               ]
             }
           }
