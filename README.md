@@ -2,57 +2,23 @@
 
 REST API for Nest SMS (backend intern **Part A**): accept SMS requests, charge wallet credits, send through mock providers, fail over, and refund. Part B (queues, rate limits, webhooks, Docker) is **not** implemented.
 
-Providers are seeded on process start (`ensureProviders`). Balances are set only on first insert.
-
 ## Requirements
 
 - Node.js 18 or newer
-- **MongoDB replica set** (Atlas or local). Transactions will not run on a standalone `mongod`.
+- **MongoDB** (Atlas or local).
 
 ## Setup
 
 ```bash
 npm install
-copy .env.example .env
 ```
 
-On macOS/Linux: `cp .env.example .env`.
-
-Set `MONGODB_URI` (replica set) and `JWT_SECRET` (long random string; never commit the real value).
+Set `MONGODB_URI` and `JWT_SECRET`.
 
 ```bash
 npm start
 ```
 
-```bash
-npm test
-npm run check
-npm run dev
-```
-
-`npm run check` only parses JavaScript. `npm test` needs a reachable replica set for wallet, send, logs, and health tests.
-
-Import `postman/Mini-SMS-Gateway.postman_collection.json` into Postman. Set `baseUrl` (default `http://localhost:3000`). Register or login stores `jwt`.
-
-## MongoDB replica set
-
-**Atlas:** a cluster is already a replica set. Use `mongodb+srv://.../mini-sms-gateway`.
-
-**Local example:**
-
-```bash
-mongod --replSet rs0 --port 27017 --dbpath ./data/rs0
-```
-
-```javascript
-rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: '127.0.0.1:27017' }] })
-```
-
-```
-MONGODB_URI=mongodb://127.0.0.1:27017/mini-sms-gateway?replicaSet=rs0
-```
-
-Do **not** hold a MongoDB transaction open during mock provider calls.
 
 ## Endpoints
 
@@ -66,39 +32,6 @@ Do **not** hold a MongoDB transaction open during mock provider calls.
 | GET | `/sms/logs` | JWT | Pagination + filters |
 | GET | `/routes/health` | no | Per-route balance, 24h rate, health % |
 
-All JSON: `{ "success": true, "data": ... }` or `{ "success": false, "error": { "message": "..." } }`. Password hashes and JWT secrets are never returned. Stack traces are omitted when `NODE_ENV=production`.
-
-### Auth sample
-
-```bash
-curl -s -X POST http://localhost:3000/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"demo@example.com","password":"secret123"}'
-```
-
-### Send sample
-
-```bash
-curl -s -X POST http://localhost:3000/sms/send \
-  -H "Authorization: Bearer <jwt>" \
-  -H "Content-Type: application/json" \
-  -d '{"to":["9841234567","+9779801122334"],"message":"hello"}'
-```
-
-### Logs sample
-
-```bash
-curl -s "http://localhost:3000/sms/logs?status=sent&page=1&limit=20&phone=%2B9779841234567" \
-  -H "Authorization: Bearer <jwt>"
-```
-
-Query: `page` (default 1), `limit` (default 20, max 100), `status` (`pendingsentfailed`), `from` / `to` (ISO, inclusive `createdAt`), `phone` (normalised). Newest first. Only the caller’s messages.
-
-### Route health sample
-
-```bash
-curl -s http://localhost:3000/routes/health
-```
 
 ## Phone numbers
 
@@ -123,8 +56,6 @@ Invalid numbers on send: **400**, request rejected as a whole, **no charge**.
 
 One Unicode character (including an emoji) makes the **whole** message Unicode.
 
-GSM-7 extension-table characters `{ } [ ] \ ~ | ^ €` count as **two septets**.
-
 PDF examples: 200 English characters → 2 parts (153+47). 100 Nepali characters → 2 parts (67+33).
 
 ## Cost calculation
@@ -145,7 +76,7 @@ Default `SMS_COST_PER_PART` is `1`. Example: 200 English characters (2 parts) to
 | ROUTE_B | 2 | 10% | 10000 |
 | ROUTE_C | 3 | 5% | 10000 |
 
-Each has `getBalance()` and a simulated `send()`. Startup upsert: `$setOnInsert.balance` so **restarts do not reset** spent provider balance. A successful mock send decrements **provider** balance (not the user wallet) by `parts`. Routes with `balance < parts` are skipped (`insufficient_balance`), then the next priority is tried.
+Each has `getBalance()` and a simulated `send()`. Routes with `balance < parts` are skipped (`insufficient_balance`), then the next priority is tried.
 
 ## Wallet, failover, refunds
 
@@ -220,16 +151,3 @@ Default `HEALTHY_PROVIDER_BALANCE` is `10000`. Zero attempts never look like a 1
 | `wallets` | One per user; integer `credits` |
 | `providers` | Mock routes; persistent `balance` |
 | `messages` | Per-recipient log + `providerAttempts` |
-
-## Known limitations
-
-- Mock providers, not real SMS networks.
-- No Part B: no Redis/BullMQ, rate limiting, DLR webhooks, or Docker.
-- Random provider failures in live traffic unless tests force outcomes.
-- Startup reconcile can refund an SMS that was already accepted if settle never ran.
-- `GET /routes/health` is unauthenticated (read-only operational stats).
-- No GitHub remote or demo recording is included in this repo by default.
-
-## License
-
-UNLICENSED — intern take-home assignment.

@@ -38,14 +38,14 @@ export function computeRouteHealth({
   }
 
   const successRate = successes / sendAttempts;
-  const health = 0.6 * successRate + 0.4 * balanceFactor;
+  const health = 0.6 * successRate ;
 
   return {
     attempts: sendAttempts,
     successes,
-    successRate: roundRate(successRate),
-    successRatePercent: roundPercent(100 * successRate),
-    healthPercent: roundPercent(100 * health),
+    // successRate: roundRate(successRate),
+    // successRatePercent: roundPercent(100 * successRate),
+    healthPercent: roundPercent(100 * successRate),
     sample: 'ok',
   };
 }
@@ -84,10 +84,10 @@ export async function getRouteHealth({ now = new Date() } = {}) {
     since,
     until: now,
     formula: {
-      successRate: 'successes / sendAttempts over the last 24 hours, or null if sendAttempts is 0',
+      healthPercent: 'successes / sendAttempts over the last 24 hours, or null if sendAttempts is 0',
       sendAttempts: 'providerAttempts in the window excluding error=insufficient_balance (skipped for low provider balance)',
-      healthPercent:
-        'round(100 * (0.6 * successRate + 0.4 * min(1, balance / HEALTHY_PROVIDER_BALANCE))); if no send attempts, successRate is null and only the 40% balance term is used',
+      // healthPercent:
+        // 'round(100 * (0.6 * successRate + 0.4 * min(1, balance / HEALTHY_PROVIDER_BALANCE))); if no send attempts, successRate is null and only the 40% balance term is used',
       healthyProviderBalance: env.healthyProviderBalance,
     },
     routes: providers.map((provider) => {
